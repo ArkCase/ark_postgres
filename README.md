@@ -5,10 +5,11 @@ PostgreSQL Docker image based on Rocky Linux
 
 registry.redhat.io/rhel8/postgresql-13  is equivelent RHEL Official PostGres Image
 
-https://catalog.redhat.com/software/containers/rhel8/postgresql-13/5ffdbdef73a65398111b8362?container-tabs=gti
+# Documentation on Parameters
 
+https://catalog.redhat.com/software/containers/rhel8/postgresql-13/5ffdbdef73a65398111b8362?container-tabs=overview
 
-## Source code
+## Source code 
 RHEL official Postgres 13 is at https://github.com/docker-library/postgres
 
 ## How to build:
