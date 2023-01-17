@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  containers:
+  - env:
+    - name: POSTGRESQL_USER
+      value: user
+    - name: POSTGRESQL_PASSWORD
+      value: pass
+    - name: POSTGRESQL_DATABASE
+      value: db
+    image: 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_postgres:latest
+    imagePullPolicy: Always
+    name: postgres
+    ports:
+    - containerPort: 3306
+      name: dbport
+      protocol: TCP
+  hostname: postgres
+  imagePullSecrets:
+  - name: aws-arkcase-pull
