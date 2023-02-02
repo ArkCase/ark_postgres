@@ -17,7 +17,7 @@ spec:
     imagePullPolicy: Always
     name: db
     ports:
-    - containerPort: 3306
+    - containerPort: 5432
       name: dbport
       protocol: TCP
   hostname: db

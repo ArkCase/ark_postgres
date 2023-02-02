@@ -113,10 +113,16 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 RUN usermod -a -G root postgres && \
     /usr/libexec/fix-permissions --read-only "$APP_DATA"
 
-RUN mkdir -p /opt/app-root/src/ark_pentaho_ee
+#COPY ark_pentaho_ee/create_quartz_postgresql.sql /docker-entrypoint-initdb.d
+#COPY ark_pentaho_ee/create_repository_postgresql.sql /docker-entrypoint-initdb.d
+#COPY ark_pentaho_ee/create_jcr_postgresql.sql /docker-entrypoint-initdb.d
+#COPY ark_pentaho_ee/pentaho_mart_postgresql.sql /docker-entrypoint-initdb.d
 
-COPY ark_pentaho_ee/* /opt/app-root/src/ark_pentaho_ee/
 USER 26
+
+# Create Pentaho Databases automatically 
+COPY ark_pentaho_ee/* /opt/app-root/src/ark_pentaho_ee/
+COPY ark_pentaho_ee/ark_pentaho_ee.sh /opt/app-root/src/postgresql-start/
 
 ENTRYPOINT ["container-entrypoint"]
 CMD ["run-postgresql"]
