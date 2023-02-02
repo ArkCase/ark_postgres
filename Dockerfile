@@ -113,6 +113,9 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 RUN usermod -a -G root postgres && \
     /usr/libexec/fix-permissions --read-only "$APP_DATA"
 
+RUN mkdir -p /opt/app-root/src/ark_pentaho_ee
+
+COPY ark_pentaho_ee/* /opt/app-root/src/ark_pentaho_ee/
 USER 26
 
 ENTRYPOINT ["container-entrypoint"]
