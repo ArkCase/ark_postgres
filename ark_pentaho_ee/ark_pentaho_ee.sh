@@ -1,5 +1,8 @@
 #!/bin/bash
 
+EXECUTED="true"
+[ "${0}" = "${BASH_SOURCE}" ] && EXECUTED="false"
+
 say() {
 	echo -e "${@}"
 }
@@ -22,4 +25,5 @@ SCRIPTS=(
 for SQL in "${SCRIPTS[@]}" ; do
 	psql -U "${PGUSER}" -a -f "${SQL}" || fail "Failed to execute the initialzation script [${SSQL}]"
 done
-exit 0
+
+${EXECUTED} || exit 0
