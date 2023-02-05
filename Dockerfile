@@ -122,7 +122,7 @@ USER 26
 
 # Create Pentaho Databases automatically 
 COPY ark_pentaho_ee/* /opt/app-root/src/ark_pentaho_ee/
-COPY ark_pentaho_ee/ark_pentaho_ee.sh /opt/app-root/src/postgresql-start/
+COPY ark_pentaho_ee/ark_pentaho_ee.sh /opt/app-root/src/postgresql-init/
 
 ENTRYPOINT ["container-entrypoint"]
 CMD ["run-postgresql"]
