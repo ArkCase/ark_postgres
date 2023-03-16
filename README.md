@@ -1,4 +1,4 @@
-# Arkcase Postgres
+# Postgres for Arkcase
 PostgreSQL Docker image based on Rocky Linux
 
 ## RHEL Official Postgres 13
