@@ -7,8 +7,8 @@
 ###########################################################################################################
 # How to build: 
 #
-# docker build -t ${BASE_REGISTRY}/arkcase/postgres:latest .
-# docker push ${BASE_REGISTRY}/arkcase/postgres:latest 
+# docker build -t arkcase/postgres:latest .
+# docker push arkcase/postgres:latest 
 #
 # How to run: (Helm)
 #
@@ -18,7 +18,7 @@
 #
 # How to run: (Docker)
 #
-# docker run -d --name ark_postgres -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432  -e MYSQL_ROOT_PASSWORD=mypass -p 3306:3306 ${BASE_REGISTRY}/arkcase/postgres:latest
+# docker run -d --name ark_postgres -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432  -e MYSQL_ROOT_PASSWORD=mypass -p 3306:3306 arkcase/postgres:latest
 # docker exec -it ark_postgres /bin/bash
 # docker stop ark_postgres
 # docker rm ark_postgres
@@ -31,12 +31,12 @@
 #
 ###########################################################################################################
 
-ARG BASE_REGISTRY
+ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG BASE_REPO="arkcase/base"
 ARG BASE_TAG="8.7.0"
 ARG VER="13"
 
-FROM "${BASE_REGISTRY}/${BASE_REPO}:${BASE_TAG}"
+FROM "${PUBLIC_REGISTRY}/${BASE_REPO}:${BASE_TAG}"
 
 # PostgreSQL image for OpenShift.
 # Volumes:
@@ -48,8 +48,7 @@ FROM "${BASE_REGISTRY}/${BASE_REPO}:${BASE_TAG}"
 #  * $POSTGRESQL_ADMIN_PASSWORD (Optional) - Password for the 'postgres'
 #                           PostgreSQL administrative account
 
-ENV POSTGRESQL_VERSION=13 \
-    POSTGRESQL_PREV_VERSION=12 \
+ENV POSTGRESQL_VERSION=${VER} \
     HOME=/var/lib/pgsql \
     PGUSER=postgres \
     APP_DATA=/opt/app-root
@@ -62,15 +61,15 @@ create, run, maintain and access a PostgreSQL DBMS server."
 LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
       io.k8s.description="$DESCRIPTION" \
-      io.k8s.display-name="PostgreSQL 13" \
+      io.k8s.display-name="PostgreSQL ${VER}" \
       io.openshift.expose-services="5432:postgresql" \
-      io.openshift.tags="database,postgresql,postgresql13,postgresql-13" \
+      io.openshift.tags="database,postgresql,postgresql${VER},postgresql-${VER}" \
       io.openshift.s2i.assemble-user="26" \
-      name="rhel8/postgresql-13" \
-      com.redhat.component="postgresql-13-container" \
+      name="rhel8/postgresql-${VER}" \
+      com.redhat.component="postgresql-${VER}-container" \
       version="1" \
       com.redhat.license_terms="https://www.redhat.com/en/about/red-hat-end-user-license-agreements#rhel" \
-      usage="podman run -d --name postgresql_database -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432 rhel8/postgresql-13" \
+      usage="podman run -d --name postgresql_database -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432 rhel8/postgresql-${VER}" \
       maintainer="SoftwareCollections.org <sclorg@redhat.com>"
 
 EXPOSE 5432
@@ -80,7 +79,7 @@ COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
 # This image must forever use UID 26 for postgres user so our volumes are
 # safe in the future. This should *never* change, the last test is there
 # to make sure of that.
-RUN yum -y module enable postgresql:13 && \
+RUN yum -y module enable postgresql:${VER} && \
     INSTALL_PKGS="rsync tar gettext bind-utils nss_wrapper postgresql-server postgresql-contrib" && \
     INSTALL_PKGS="$INSTALL_PKGS pgaudit" && \
     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
