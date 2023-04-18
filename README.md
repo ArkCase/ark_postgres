@@ -1,4 +1,4 @@
-# ark_postgres
+# Postgres for Arkcase
 PostgreSQL Docker image based on Rocky Linux
 
 ## RHEL Official Postgres 13
@@ -14,9 +14,9 @@ RHEL official Postgres 13 is at https://github.com/docker-library/postgres
 
 ## How to build:
 
-docker build -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_postgres:latest .
+docker build -t ark_postgres:latest .
 
-docker push 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_postgres:latest
+Repository pushes occur automatically when code is checked in.
 
 ## How to run: (Helm)
 
@@ -28,7 +28,7 @@ helm uninstall ark-postgres
 
 ## How to run: (Docker)
 
-docker run -d --name ark_postgres -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432  -e MYSQL_ROOT_PASSWORD=mypass -p 3306:3306 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_postgres:latest
+docker run -d --name ark_postgres -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432  -e MYSQL_ROOT_PASSWORD=mypass -p 3306:3306 ark_postgres:latest
 
 docker exec -it ark_postgres /bin/bash
 
