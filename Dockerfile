@@ -38,6 +38,8 @@ ARG VER="13"
 
 FROM "${PUBLIC_REGISTRY}/${BASE_REPO}:${BASE_TAG}"
 
+ARG VER
+
 # PostgreSQL image for OpenShift.
 # Volumes:
 #  * /var/lib/pgsql/data   - Database cluster for PostgreSQL
