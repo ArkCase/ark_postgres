@@ -22,7 +22,7 @@ PG_INITIALIZED=false
 
 if [ ! -f "$PGDATA/postgresql.conf" ]; then
   initialize_database
-  PG_INITIALIZED=:
+  PG_INITIALIZED=true
 else
   try_pgupgrade
 fi
