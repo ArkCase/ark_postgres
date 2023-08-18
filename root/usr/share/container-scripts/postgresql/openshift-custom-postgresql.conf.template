@@ -21,9 +21,9 @@ shared_buffers = ${POSTGRESQL_SHARED_BUFFERS}
 effective_cache_size = ${POSTGRESQL_EFFECTIVE_CACHE_SIZE}
 
 ssl = on
-ssl_ca_file = '${SSL_DIR}/acme-root-ca.crt'
+ssl_ca_file = '${SSL_DIR}/ca-int.crt'
 ssl_cert_file = '${SSL_DIR}/cert.pem'
 ssl_crl_file = ''
-ssl_key_file = '${SSL_DIR}/key.pem'
+ssl_key_file = '${SSL_DIR}/cert.key'
 ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL' # allowed SSL ciphers
 ssl_prefer_server_ciphers = on
