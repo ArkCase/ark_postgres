@@ -212,10 +212,10 @@ EOF
 #
 
 # Allow connections from all hosts.
-host all all all md5
+hostssl all all all md5
 
 # Allow replication connections from all hosts.
-host replication all all md5
+hostssl replication all all md5
 EOF
 }
 

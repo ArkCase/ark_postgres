@@ -33,8 +33,9 @@
 
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG BASE_REPO="arkcase/base"
-ARG BASE_TAG="8.7.0"
+ARG BASE_TAG="8.8-01"
 ARG VER="13"
+ARG BLD="01"
 
 FROM "${PUBLIC_REGISTRY}/${BASE_REPO}:${BASE_TAG}"
 
@@ -115,10 +116,10 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # 2. we call fix-permissions on $APP_DATA here directly (UID=0 during build
 #    anyways) to assure that s2i process is actually able to _read_ the
 #    user-specified scripting.
-RUN usermod -a -G root postgres && \
+RUN usermod -a -G root,${ACM_GROUP} postgres && \
     /usr/libexec/fix-permissions --read-only "$APP_DATA"
 
 USER 26
 
-ENTRYPOINT ["container-entrypoint"]
+ENTRYPOINT [ "/entrypoint" ]
 CMD ["run-postgresql"]
