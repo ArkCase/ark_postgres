@@ -21,7 +21,7 @@ shared_buffers = ${POSTGRESQL_SHARED_BUFFERS}
 effective_cache_size = ${POSTGRESQL_EFFECTIVE_CACHE_SIZE}
 
 ssl = on
-ssl_ca_file = '${SSL_DIR}/ca-int.crt'
+ssl_ca_file = '${SSL_DIR}/ca-int.pem'
 ssl_cert_file = '${SSL_DIR}/cert.pem'
 ssl_crl_file = ''
 ssl_key_file = '${SSL_DIR}/cert.key'
