@@ -1,0 +1,13 @@
+#!/bin/bash
+
+[ ${#} -eq 1 ] || set -- "ready"
+
+CMD=()
+case "${1,,}" in
+	startup ) CMD=(psql -U postgres -h 127.0.0.1) ;;
+	live ) CMD=(psql -U arkcase -h 127.0.0.1) ;;
+	ready ) CMD=(psql -U arkcase -h 127.0.0.1) ;;
+	* ) exit 1 ;;
+esac
+
+exec "${CMD[@]}" <<< "select now();"
