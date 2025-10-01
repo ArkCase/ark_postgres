@@ -57,7 +57,7 @@ ARG VER
 ENV POSTGRESQL_VERSION=${VER} \
     HOME=/var/lib/pgsql \
     PGUSER=postgres \
-    APP_DATA=/opt/app-root
+    APP_DATA=${APP_ROOT}
 
 ENV SUMMARY="PostgreSQL is an advanced Object-Relational database management system" \
     DESCRIPTION="PostgreSQL is an advanced Object-Relational database management system (DBMS). \
