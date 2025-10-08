@@ -34,15 +34,18 @@
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG VER="13"
 
+ARG PSQL_KEY="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+
 ARG BASE_REGISTRY="${PUBLIC_REGISTRY}"
 ARG BASE_REPO="arkcase/base"
-ARG BASE_VER="8"
+ARG BASE_VER="22.04"
 ARG BASE_VER_PFX=""
 ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}:${BASE_VER_PFX}${BASE_VER}"
 
 FROM "${BASE_IMG}"
 
 ARG VER
+ARG PSQL_KEY
 
 # PostgreSQL image for OpenShift.
 # Volumes:
@@ -54,10 +57,10 @@ ARG VER
 #  * $POSTGRESQL_ADMIN_PASSWORD (Optional) - Password for the 'postgres'
 #                           PostgreSQL administrative account
 
-ENV POSTGRESQL_VERSION=${VER} \
-    HOME=/var/lib/pgsql \
-    PGUSER=postgres \
-    APP_DATA=${APP_ROOT}
+ENV POSTGRESQL_VERSION="${VER}" \
+    HOME="/var/lib/postgresql" \
+    PGUSER="postgres" \
+    APP_DATA="${APP_ROOT}"
 
 ENV SUMMARY="PostgreSQL is an advanced Object-Relational database management system" \
     DESCRIPTION="PostgreSQL is an advanced Object-Relational database management system (DBMS). \
@@ -68,41 +71,41 @@ LABEL summary="$SUMMARY" \
       description="$DESCRIPTION" \
       io.k8s.description="$DESCRIPTION" \
       io.k8s.display-name="PostgreSQL ${VER}" \
-      io.openshift.expose-services="5432:postgresql" \
-      io.openshift.tags="database,postgresql,postgresql${VER},postgresql-${VER}" \
-      io.openshift.s2i.assemble-user="26" \
-      name="rhel8/postgresql-${VER}" \
-      com.redhat.component="postgresql-${VER}-container" \
-      version="1" \
-      com.redhat.license_terms="https://www.redhat.com/en/about/red-hat-end-user-license-agreements#rhel" \
-      usage="podman run -d --name postgresql_database -e POSTGRESQL_USER=user -e POSTGRESQL_PASSWORD=pass -e POSTGRESQL_DATABASE=db -p 5432:5432 rhel8/postgresql-${VER}" \
-      maintainer="SoftwareCollections.org <sclorg@redhat.com>"
+      version="1"
 
 EXPOSE 5432
 
 COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
 
-# This image must forever use UID 26 for postgres user so our volumes are
-# safe in the future. This should *never* change, the last test is there
-# to make sure of that.
-RUN yum -y module enable postgresql:${VER} && \
-    INSTALL_PKGS="rsync tar gettext bind-utils nss_wrapper postgresql-server postgresql-contrib" && \
-    INSTALL_PKGS="$INSTALL_PKGS pgaudit" && \
-    yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
-    rpm -V $INSTALL_PKGS && \
-    yum -y reinstall tzdata && \
-    yum -y clean all --enablerepo='*' && \
-    localedef -f UTF-8 -i en_US en_US.UTF-8 && \
-    test "$(id postgres)" = "uid=26(postgres) gid=26(postgres) groups=26(postgres)" && \
-    mkdir -p /var/lib/pgsql/data && \
-    /usr/libexec/fix-permissions /var/lib/pgsql /var/run/postgresql
+ENV PGBASE="${HOME}/${VER}"
+ENV PGDATA="${PGBASE}/main"
+ENV PGRUN="/var/run/postgresql"
+
+# Make sure we use the correct PostgreSQL version
+RUN export PGSQL_SIG="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
+    export PGSQL_LIST="/etc/apt/sources.list.d/pgdg.list" && \
+    curl -fsSL "${PSQL_KEY}" | gpg --dearmor -o "${PGSQL_SIG}" && \
+    chmod 0644 "${PGSQL_SIG}" && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | \
+        tee  "${PGSQL_LIST}" && \
+    chmod 0644 "${PGSQL_LIST}"
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+        postgresql-${VER} \
+        postgresql-client-${VER} \
+        postgresql-${VER}-pgaudit \
+      && \
+    apt-get clean && \
+    mkdir -p "${PGDATA}" && \
+    /usr/libexec/fix-permissions "${HOME}" "${PGRUN}"
 
 # Get prefix path and path to scripts rather than hard-code them in scripts
 ENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/postgresql \
     ENABLED_COLLECTIONS=
 
 COPY root /
-COPY ./s2i/bin/ $STI_SCRIPTS_PATH
+RUN secure-permissions
 
 # Not using VOLUME statement since it's not working in OpenShift Online:
 # https://github.com/sclorg/httpd-container/issues/30
@@ -119,10 +122,10 @@ COPY ./s2i/bin/ $STI_SCRIPTS_PATH
 # 2. we call fix-permissions on $APP_DATA here directly (UID=0 during build
 #    anyways) to assure that s2i process is actually able to _read_ the
 #    user-specified scripting.
-RUN usermod -a -G root,${ACM_GROUP} postgres && \
-    /usr/libexec/fix-permissions --read-only "$APP_DATA"
+RUN usermod -a -G root,${ACM_GROUP} "${PGUSER}" && \
+    /usr/libexec/fix-permissions --read-only "${APP_DATA}"
 
-USER 26
+USER "${PGUSER}"
 
 ENTRYPOINT [ "/entrypoint" ]
 CMD ["run-postgresql"]
