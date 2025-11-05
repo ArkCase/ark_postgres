@@ -47,16 +47,6 @@ FROM "${BASE_IMG}"
 ARG VER
 ARG PSQL_KEY
 
-# PostgreSQL image for OpenShift.
-# Volumes:
-#  * /var/lib/pgsql/data   - Database cluster for PostgreSQL
-# Environment:
-#  * $POSTGRESQL_USER     - Database user name
-#  * $POSTGRESQL_PASSWORD - User's password
-#  * $POSTGRESQL_DATABASE - Name of the database to create
-#  * $POSTGRESQL_ADMIN_PASSWORD (Optional) - Password for the 'postgres'
-#                           PostgreSQL administrative account
-
 ENV POSTGRESQL_VERSION="${VER}" \
     HOME="/var/lib/postgresql" \
     PGUSER="postgres" \
@@ -67,19 +57,30 @@ ENV SUMMARY="PostgreSQL is an advanced Object-Relational database management sys
 The image contains the client and server programs that you'll need to \
 create, run, maintain and access a PostgreSQL DBMS server."
 
-LABEL summary="$SUMMARY" \
-      description="$DESCRIPTION" \
-      io.k8s.description="$DESCRIPTION" \
+LABEL summary="${SUMMARY}" \
+      description="${DESCRIPTION}" \
+      io.k8s.description="${DESCRIPTION}" \
       io.k8s.display-name="PostgreSQL ${VER}" \
       version="1"
 
 EXPOSE 5432
+
+ENV APP_USER="${PGUSER}"
+ENV APP_UID="28"
+ENV APP_GROUP="${APP_USER}"
+ENV APP_GID="${APP_UID}"
+
+RUN groupadd --gid "${APP_UID}" --system "${APP_USER}" && \
+    useradd --gid "${APP_GROUP}" --home-dir "${HOME}" --create-home --shell /sbin/nologin --uid "${APP_UID}" --system "${APP_USER}"
 
 COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
 
 ENV PGBASE="${HOME}/${VER}"
 ENV PGDATA="${PGBASE}/main"
 ENV PGRUN="/var/run/postgresql"
+
+RUN mkdir -p "${PGDATA}" && chown -R "${APP_USER}:${APP_GROUP}" "${HOME}" && \
+    test "$(id -u "${APP_USER}"):$(id -g "${APP_GROUP}")" = "${APP_UID}:${APP_GID}"
 
 # Make sure we use the correct PostgreSQL version
 RUN export PGSQL_SIG="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
@@ -122,7 +123,7 @@ RUN secure-permissions
 # 2. we call fix-permissions on $APP_DATA here directly (UID=0 during build
 #    anyways) to assure that s2i process is actually able to _read_ the
 #    user-specified scripting.
-RUN usermod -a -G root,${ACM_GROUP} "${PGUSER}" && \
+RUN usermod -a -G "root,${ACM_GROUP}" "${PGUSER}" && \
     /usr/libexec/fix-permissions --read-only "${APP_DATA}"
 
 USER "${PGUSER}"
