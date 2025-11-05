@@ -78,6 +78,7 @@ COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
 ENV PGBASE="${HOME}/${VER}"
 ENV PGDATA="${PGBASE}/main"
 ENV PGRUN="/var/run/postgresql"
+ENV PATH="/usr/lib/postgresql/${VER}/bin:${PATH}"
 
 RUN mkdir -p "${PGDATA}" && chown -R "${APP_USER}:${APP_GROUP}" "${HOME}" && \
     test "$(id -u "${APP_USER}"):$(id -g "${APP_GROUP}")" = "${APP_UID}:${APP_GID}"
