@@ -100,6 +100,7 @@ RUN apt-get update && \
       && \
     apt-get clean && \
     mkdir -p "${PGDATA}" && \
+    rm -rvf "/var/lib/postgresql" && \
     /usr/libexec/fix-permissions "${HOME}" "${PGRUN}"
 
 # Get prefix path and path to scripts rather than hard-code them in scripts
