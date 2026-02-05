@@ -249,7 +249,7 @@ migrate_db ()
 
 function set_pgdata ()
 {
-  export PGDATA=$HOME/data/userdata
+  [ -n "${PGDATA-}" ] || export PGDATA=$HOME/data/userdata
   # create a subdirectory that the user owns
   mkdir -p "$PGDATA"
   # backwards compatibility case, we used to put the data here,
