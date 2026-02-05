@@ -48,7 +48,7 @@ ARG VER
 ARG PSQL_KEY
 
 ENV POSTGRESQL_VERSION="${VER}" \
-    HOME="/var/lib/postgresql" \
+    HOME="/var/lib/pgsql" \
     PGUSER="postgres" \
     APP_DATA="${APP_ROOT}"
 
@@ -75,8 +75,8 @@ RUN groupadd --gid "${APP_UID}" --system "${APP_USER}" && \
 
 COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
 
-ENV PGBASE="${HOME}/${VER}"
-ENV PGDATA="${PGBASE}/main"
+ENV PGBASE="${HOME}"
+ENV PGDATA="${PGBASE}/data/userdata"
 ENV PGRUN="/var/run/postgresql"
 ENV PATH="/usr/lib/postgresql/${VER}/bin:${PATH}"
 
