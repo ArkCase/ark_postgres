@@ -94,6 +94,7 @@ RUN export PGSQL_SIG="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install \
+        libnss-wrapper \
         postgresql-${VER} \
         postgresql-client-${VER} \
         postgresql-${VER}-pgaudit \
