@@ -18,8 +18,8 @@ else
     export POSTGRESQL_EFFECTIVE_CACHE_SIZE=${POSTGRESQL_EFFECTIVE_CACHE_SIZE:-$effective_cache}
 fi
 
-export POSTGRESQL_RECOVERY_FILE="${HOME}/custom-recovery.conf"
-export POSTGRESQL_CONFIG_FILE="${HOME}/custom-postgresql.conf"
+export POSTGRESQL_RECOVERY_FILE=$HOME/openshift-custom-recovery.conf
+export POSTGRESQL_CONFIG_FILE=$HOME/openshift-custom-postgresql.conf
 
 postinitdb_actions=
 
@@ -146,12 +146,12 @@ function should_hack_data_sync_retry() {
 # additional custom settings and is included from $PGDATA/postgresql.conf.
 function generate_postgresql_config() {
   envsubst \
-      < "${CONTAINER_SCRIPTS_PATH}/custom-postgresql.conf.template" \
+      < "${CONTAINER_SCRIPTS_PATH}/openshift-custom-postgresql.conf.template" \
       > "${POSTGRESQL_CONFIG_FILE}"
 
   if [ "${ENABLE_REPLICATION}" == "true" ]; then
     envsubst \
-        < "${CONTAINER_SCRIPTS_PATH}/custom-postgresql-replication.conf.template" \
+        < "${CONTAINER_SCRIPTS_PATH}/openshift-custom-postgresql-replication.conf.template" \
         >> "${POSTGRESQL_CONFIG_FILE}"
   fi
 
@@ -169,7 +169,7 @@ function generate_postgresql_config() {
 
 function generate_postgresql_recovery_config() {
   envsubst \
-      < "${CONTAINER_SCRIPTS_PATH}/custom-recovery.conf.template" \
+      < "${CONTAINER_SCRIPTS_PATH}/openshift-custom-recovery.conf.template" \
       > "${POSTGRESQL_RECOVERY_FILE}"
 }
 
