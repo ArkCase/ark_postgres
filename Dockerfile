@@ -35,7 +35,7 @@ ARG FIPS=""
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG VER="13"
 
-ARG PGSQL_KEY_SRC="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+ARG PGSQL_KEYRING_SRC="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
 
 ARG BASE_REGISTRY="${PUBLIC_REGISTRY}"
 ARG BASE_REPO="arkcase/base"
@@ -46,7 +46,7 @@ ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}${FIPS}:${BASE_VER_PFX}${BASE_VER}"
 FROM "${BASE_IMG}"
 
 ARG VER
-ARG PGSQL_KEY_SRC
+ARG PGSQL_KEYRING_SRC
 
 ENV POSTGRESQL_VERSION="${VER}" \
     HOME="/var/lib/pgsql" \
@@ -85,10 +85,10 @@ RUN mkdir -p "${PGDATA}" && chown -R "${APP_USER}:${APP_GROUP}" "${HOME}" && \
     test "$(id -u "${APP_USER}"):$(id -g "${APP_GROUP}")" = "${APP_UID}:${APP_GID}"
 
 # Make sure we use the correct PostgreSQL version
-RUN export PGSQL_KEY="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
+RUN export PGSQL_KEYRING="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
     export PGSQL_LIST="/etc/apt/sources.list.d/pgdg.list" && \
-    curl -fsSL "${PGSQL_KEY_SRC}" | gpg --dearmor -o "${PGSQL_KEY}" && \
-    chmod 0644 "${PGSQL_KEY}" && \
+    curl -fsSL "${PGSQL_KEYRING_SRC}" | gpg --dearmor -o "${PGSQL_KEYRING}" && \
+    chmod 0644 "${PGSQL_KEYRING}" && \
     echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | \
         tee  "${PGSQL_LIST}" && \
     chmod 0644 "${PGSQL_LIST}"
