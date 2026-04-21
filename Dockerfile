@@ -34,6 +34,7 @@
 ARG FIPS=""
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG VER="13"
+ARG PREV_VER=""
 
 ARG PGSQL_KEYRING_SRC="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
 
@@ -46,6 +47,7 @@ ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}${FIPS}:${BASE_VER_PFX}${BASE_VER}"
 FROM "${BASE_IMG}"
 
 ARG VER
+ARG PREV_VER
 ARG PGSQL_KEYRING_SRC
 
 ENV POSTGRESQL_VERSION="${VER}" \
@@ -104,6 +106,22 @@ RUN apt-get update && \
     mkdir -p "${PGDATA}" && \
     rm -rvf "/var/lib/postgresql" "/var/log/postgresql" && \
     /usr/libexec/fix-permissions "${HOME}" "${PGRUN}"
+
+# Only do this if we've been asked to support a prior version
+# for upgrade, and that version is lower than this version
+RUN test -z "${PREV_VER}" && exit 0 ; \
+    test "${PREV_VER}" -ge "${VER}" && \
+      { echo "The previous version ${PREV_VER} is the same or newer than the intended current version ${VER}" ; exit 1 ; } ; \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+        libnss-wrapper \
+        postgresql-${PREV_VER} \
+        postgresql-client-${PREV_VER} \
+        postgresql-${PREV_VER}-pgaudit \
+      && \
+    apt-get clean
+
+ENV POSTGRESQL_PREV_VERSION="${PREV_VER}"
+ENV POSTGRESQL_UPGRADE="${PREV_VER:+hardlink}"
 
 # Get prefix path and path to scripts rather than hard-code them in scripts
 ENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/postgresql \
