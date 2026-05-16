@@ -31,21 +31,24 @@
 #
 ###########################################################################################################
 
+ARG FIPS=""
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG VER="13"
+ARG PREV_VER=""
 
-ARG PGSQL_KEY_SRC="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+ARG PGSQL_KEYRING_SRC="https://www.postgresql.org/media/keys/ACCC4CF8.asc"
 
 ARG BASE_REGISTRY="${PUBLIC_REGISTRY}"
 ARG BASE_REPO="arkcase/base"
 ARG BASE_VER="24.04"
 ARG BASE_VER_PFX=""
-ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}:${BASE_VER_PFX}${BASE_VER}"
+ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}${FIPS}:${BASE_VER_PFX}${BASE_VER}"
 
 FROM "${BASE_IMG}"
 
 ARG VER
-ARG PGSQL_KEY_SRC
+ARG PREV_VER
+ARG PGSQL_KEYRING_SRC
 
 ENV POSTGRESQL_VERSION="${VER}" \
     HOME="/var/lib/pgsql" \
@@ -84,10 +87,10 @@ RUN mkdir -p "${PGDATA}" && chown -R "${APP_USER}:${APP_GROUP}" "${HOME}" && \
     test "$(id -u "${APP_USER}"):$(id -g "${APP_GROUP}")" = "${APP_UID}:${APP_GID}"
 
 # Make sure we use the correct PostgreSQL version
-RUN export PGSQL_KEY="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
+RUN export PGSQL_KEYRING="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
     export PGSQL_LIST="/etc/apt/sources.list.d/pgdg.list" && \
-    curl -fsSL "${PGSQL_KEY_SRC}" | gpg --dearmor -o "${PGSQL_KEY}" && \
-    chmod 0644 "${PGSQL_KEY}" && \
+    curl -fsSL "${PGSQL_KEYRING_SRC}" | gpg --dearmor -o "${PGSQL_KEYRING}" && \
+    chmod 0644 "${PGSQL_KEYRING}" && \
     echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | \
         tee  "${PGSQL_LIST}" && \
     chmod 0644 "${PGSQL_LIST}"
@@ -103,6 +106,22 @@ RUN apt-get update && \
     mkdir -p "${PGDATA}" && \
     rm -rvf "/var/lib/postgresql" "/var/log/postgresql" && \
     /usr/libexec/fix-permissions "${HOME}" "${PGRUN}"
+
+# Only do this if we've been asked to support a prior version
+# for upgrade, and that version is lower than this version
+RUN test -z "${PREV_VER}" && exit 0 ; \
+    test "${PREV_VER}" -ge "${VER}" && \
+      { echo "The previous version ${PREV_VER} is the same or newer than the intended current version ${VER}" ; exit 1 ; } ; \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+        libnss-wrapper \
+        postgresql-${PREV_VER} \
+        postgresql-client-${PREV_VER} \
+        postgresql-${PREV_VER}-pgaudit \
+      && \
+    apt-get clean
+
+ENV POSTGRESQL_PREV_VERSION="${PREV_VER}"
+ENV POSTGRESQL_UPGRADE="${PREV_VER:+hardlink}"
 
 # Get prefix path and path to scripts rather than hard-code them in scripts
 ENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/postgresql \

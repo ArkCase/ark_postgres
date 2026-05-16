@@ -290,8 +290,8 @@ run_pgupgrade ()
     old_collection=rh-postgresql$old_raw_version
   fi
 
-  old_pgengine=/opt/rh/$old_collection/root/usr/bin
-  new_pgengine=/opt/rh/rh-postgresql${new_raw_version}/root/usr/bin
+  old_pgengine=/usr/lib/postgresql/${POSTGRESQL_PREV_VERSION}/bin
+  new_pgengine=/usr/lib/postgresql/${POSTGRESQL_VERSION}/bin
   PGDATA_new="${PGDATA}-new"
 
   printf >&2 "\n==========  \$PGDATA upgrade: %s -> %s  ==========\n\n" \
@@ -328,7 +328,18 @@ run_pgupgrade ()
 
   # Ensure $PGDATA_new doesn't exist yet, so we can immediately remove it if
   # there's some problem.
-  test ! -e "$PGDATA_new"
+  test ! -e "${PGDATA_new}" && rm -rf "${PGDATA_new}"
+
+  # Start up the old DB and shut it right back down just to make
+  # sure everything is clean prior to the upgrade
+
+  if test -e "${PGDATA}/postmaster.pid" ; then
+      info_msg "Starting and stopping the old database to ensure everything's clean!"
+      rm -f "${PGDATA}/postmaster.pid"
+      "${old_pgengine}/pg_ctl" start -w -D "${PGDATA}" -o "-c listen_addresses=localhost"
+      "${old_pgengine}/pg_ctl" stop -w -D "${PGDATA}"
+      info_msg "Old DB is now clean!"
+  fi
 
   # initialize the database
   info_msg "Initialize new data directory; we will migrate to that."
@@ -390,31 +401,8 @@ try_pgupgrade ()
   # If we don't support pg_upgrade, skip.
   test -z "${POSTGRESQL_PREV_VERSION-}" && return 0
 
-  if test "$POSTGRESQL_VERSION" = "$version"; then
-      # No need to call pg_upgrade.
-
-      # Mistakenly requests upgrade?  If not, just start the DB.
-      test -z "${POSTGRESQL_UPGRADE-}" && return 0
-
-      # Make _sure_ we have this safety-belt here, otherwise our users would
-      # just specify '-e POSTGRESQL_UPGRADE=hardlink' permanently, even for
-      # re-deployment cases when upgrade is not needed.  Setting such
-      # unfortunate default could mean that pg_upgrade might (after some user
-      # mistake) migrate (or even destruct, especially with --link) the old data
-      # directory with limited rollback options, if any.
-      echo >&2
-      echo >&2 "== WARNING!! =="
-      echo >&2 "PostgreSQL server version matches the datadir PG_VERSION."
-      echo >&2 "The \$POSTGRESQL_UPGRADE makes no sense and you probably"
-      echo >&2 "made some mistake, keeping the variable set you might"
-      echo >&2 "risk a data loss in future!"
-      echo >&2 "==============="
-      echo >&2
-
-      # Exit here, but allow _really explicit_ foot-shot.
-      ${POSTGRESQL_UPGRADE_FORCE-false}
-      return 0
-  fi
+  # Are we already at the target version? If so, skip.
+  test "$POSTGRESQL_VERSION" = "$version" && return 0
 
   # At this point in code we know that PG_VERSION doesn't match the PostgreSQL
   # server major version;  this might mean that user either (a) mistakenly
