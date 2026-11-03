@@ -150,5 +150,4 @@ RUN usermod -a -G "root,${ACM_GROUP}" "${PGUSER}" && \
 
 USER "${PGUSER}"
 
-ENTRYPOINT [ "/entrypoint" ]
 CMD ["run-postgresql"]
