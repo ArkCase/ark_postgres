@@ -3,4 +3,17 @@
 set -euo pipefail
 . /.functions
 
+(
+	PID_FILE="${PGDATA}/postmaster.pid"
+
+	# If there's nothing to remove, then just short out
+	is_file "${PID_FILE}" || exit 0
+
+	# Something's there ... nuke it!
+	warn "Found a vestigial PID file at [${PID_FILE}] ..."
+	rm -f "${PID_FILE}" &>/dev/null \
+		&& ok "Removed the vestigial PID file!" \
+		|| err "Failed to remove the vestigial PID file ... PostgreSQL might not boot up!"
+) || exit ${?}
+
 execute "container-entrypoint" "${@}"

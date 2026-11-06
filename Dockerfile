@@ -150,4 +150,6 @@ RUN usermod -a -G "root,${ACM_GROUP}" "${PGUSER}" && \
 
 USER "${PGUSER}"
 
+STOPSIGNAL SIGINT
+
 CMD ["run-postgresql"]
