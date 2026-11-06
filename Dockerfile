@@ -95,6 +95,11 @@ RUN export PGSQL_KEYRING="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
         tee  "${PGSQL_LIST}" && \
     chmod 0644 "${PGSQL_LIST}"
 
+#
+# The prior version is only installed if we've been asked to support one (for in-place
+# upgrades), and that version is lower than this version. Both installs share this layer
+# so the package lists can be removed once they're done
+#
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install \
         libnss-wrapper \
@@ -105,20 +110,21 @@ RUN apt-get update && \
     apt-get clean && \
     mkdir -p "${PGDATA}" && \
     rm -rvf "/var/lib/postgresql" "/var/log/postgresql" && \
-    /usr/libexec/fix-permissions "${HOME}" "${PGRUN}"
-
-# Only do this if we've been asked to support a prior version
-# for upgrade, and that version is lower than this version
-RUN test -z "${PREV_VER}" && exit 0 ; \
-    test "${PREV_VER}" -ge "${VER}" && \
-      { echo "The previous version ${PREV_VER} is the same or newer than the intended current version ${VER}" ; exit 1 ; } ; \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install \
-        libnss-wrapper \
-        postgresql-${PREV_VER} \
-        postgresql-client-${PREV_VER} \
-        postgresql-${PREV_VER}-pgaudit \
-      && \
-    apt-get clean
+    /usr/libexec/fix-permissions "${HOME}" "${PGRUN}" && \
+    if [ -n "${PREV_VER}" ] ; then \
+        if [ "${PREV_VER}" -ge "${VER}" ] ; then \
+            echo "The previous version ${PREV_VER} is the same or newer than the intended current version ${VER}" ; \
+            exit 1 ; \
+        fi ; \
+        DEBIAN_FRONTEND=noninteractive apt-get -y install \
+            libnss-wrapper \
+            postgresql-${PREV_VER} \
+            postgresql-client-${PREV_VER} \
+            postgresql-${PREV_VER}-pgaudit \
+          && \
+        apt-get clean ; \
+    fi && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV POSTGRESQL_PREV_VERSION="${PREV_VER}"
 ENV POSTGRESQL_UPGRADE="${PREV_VER:+hardlink}"
