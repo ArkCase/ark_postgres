@@ -152,7 +152,9 @@ RUN secure-permissions
 #    anyways) to assure that s2i process is actually able to _read_ the
 #    user-specified scripting.
 RUN usermod -a -G "root,${ACM_GROUP}" "${PGUSER}" && \
-    /usr/libexec/fix-permissions --read-only "${APP_DATA}"
+    /usr/libexec/fix-permissions --read-only "${APP_DATA}" && \
+    chown -R "${APP_USER}:${APP_GROUP}" "${TEMP_DIR}" && \
+    chmod -R u=rwX,g=rX,o= "${TEMP_DIR}"
 
 USER "${PGUSER}"
 
