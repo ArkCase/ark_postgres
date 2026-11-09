@@ -76,8 +76,6 @@ ENV APP_GID="${APP_UID}"
 RUN groupadd --gid "${APP_UID}" --system "${APP_USER}" && \
     useradd --gid "${APP_GROUP}" --home-dir "${HOME}" --create-home --shell /sbin/nologin --uid "${APP_UID}" --system "${APP_USER}"
 
-COPY root/usr/libexec/fix-permissions /usr/libexec/fix-permissions
-
 ENV PGBASE="${HOME}"
 ENV PGDATA="${PGBASE}/data/userdata"
 ENV PGRUN="/var/run/postgresql"
@@ -100,7 +98,8 @@ RUN export PGSQL_KEYRING="/etc/apt/trusted.gpg.d/postgresql.gpg" && \
 # upgrades), and that version is lower than this version. Both installs share this layer
 # so the package lists can be removed once they're done
 #
-RUN apt-get update && \
+RUN --mount=type=bind,target=/src \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install \
         libnss-wrapper \
         postgresql-${VER} \
@@ -110,6 +109,7 @@ RUN apt-get update && \
     apt-get clean && \
     mkdir -p "${PGDATA}" && \
     rm -rvf "/var/lib/postgresql" "/var/log/postgresql" && \
+    install -o root -g root -m 0555 /src/root/usr/libexec/fix-permissions /usr/libexec && \
     /usr/libexec/fix-permissions "${HOME}" "${PGRUN}" && \
     if [ -n "${PREV_VER}" ] ; then \
         if [ "${PREV_VER}" -ge "${VER}" ] ; then \
@@ -133,8 +133,15 @@ ENV POSTGRESQL_UPGRADE="${PREV_VER:+hardlink}"
 ENV CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/postgresql \
     ENABLED_COLLECTIONS=
 
-COPY root /
-RUN secure-permissions
+#
+# Nothing installed here may be writable: not by group (whatever the checkout's modes were), and not by
+# anyone at all, so the runtime user can't modify them (it's a member of the root group, see below)
+#
+RUN --mount=type=bind,target=/src \
+    umask 0022 && \
+    cp -rv /src/root/. / && \
+    ( cd /src/root && find . -type f -print0 ) | ( cd / && xargs -0 -r chmod -v a-w ) && \
+    secure-permissions
 
 # Not using VOLUME statement since it's not working in OpenShift Online:
 # https://github.com/sclorg/httpd-container/issues/30
